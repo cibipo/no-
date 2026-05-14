@@ -1,24 +1,460 @@
+# Local Chat Website (GitHub Ready)
+
+قم بإنشاء ملف باسم `index.html` ثم ضع داخله الكود التالي بالكامل.
+
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
-  <title>Hand Gesture Control</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Chat App</title>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+      font-family: Arial, sans-serif;
+    }
+
+    body {
+      background: linear-gradient(135deg, #0f172a, #1e293b);
+      min-height: 100vh;
+      color: white;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+    }
+
+    .container {
+      width: 100%;
+      max-width: 900px;
+      background: rgba(255,255,255,0.05);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 0 20px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    input {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      outline: none;
+      font-size: 16px;
+    }
+
+    button {
+      width: 100%;
+      padding: 12px;
+      margin-top: 10px;
+      border: none;
+      border-radius: 10px;
+      background: #3b82f6;
+      color: white;
+      font-size: 16px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    button:hover {
+      background: #2563eb;
+    }
+
+    .chat-layout {
+      display: flex;
+      gap: 20px;
+      height: 600px;
+    }
+
+    .sidebar {
+      width: 30%;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 15px;
+      overflow-y: auto;
+    }
+
+    .chat-box {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 15px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .user-item {
+      padding: 12px;
+      background: rgba(255,255,255,0.08);
+      border-radius: 10px;
+      margin-top: 10px;
+      cursor: pointer;
+      transition: 0.3s;
+    }
+
+    .user-item:hover {
+      background: rgba(255,255,255,0.15);
+    }
+
+    .messages {
+      flex: 1;
+      overflow-y: auto;
+      margin-top: 10px;
+      padding-right: 5px;
+    }
+
+    .message {
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 10px;
+      width: fit-content;
+      max-width: 80%;
+      word-break: break-word;
+    }
+
+    .me {
+      background: #2563eb;
+      margin-right: auto;
+    }
+
+    .other {
+      background: #334155;
+    }
+
+    .send-box {
+      display: flex;
+      gap: 10px;
+      margin-top: 10px;
+    }
+
+    .send-box input {
+      flex: 1;
+      margin-top: 0;
+    }
+
+    .send-box button {
+      width: 120px;
+      margin-top: 0;
+    }
+
+    .topbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .logout {
+      width: auto;
+      padding: 10px 20px;
+      background: #ef4444;
+    }
+
+    .logout:hover {
+      background: #dc2626;
+    }
+
+    @media(max-width: 700px) {
+      .chat-layout {
+        flex-direction: column;
+        height: auto;
+      }
+
+      .sidebar {
+        width: 100%;
+      }
+    }
+  </style>
 </head>
 <body>
 
-<h1>👋 Hand Gesture Control</h1>
-
 <div class="container">
-  <video id="video" autoplay playsinline></video>
-  <canvas id="canvas"></canvas>
+
+  <!-- Register -->
+  <div id="registerPage">
+    <h1>إنشاء حساب</h1>
+    <input type="text" id="registerUsername" placeholder="اسم المستخدم">
+    <input type="password" id="registerPassword" placeholder="كلمة المرور">
+    <button onclick="register()">إنشاء الحساب</button>
+    <button onclick="showLogin()">لدي حساب</button>
+  </div>
+
+  <!-- Login -->
+  <div id="loginPage" class="hidden">
+    <h1>تسجيل الدخول</h1>
+    <input type="text" id="loginUsername" placeholder="اسم المستخدم">
+    <input type="password" id="loginPassword" placeholder="كلمة المرور">
+    <button onclick="login()">دخول</button>
+    <button onclick="showRegister()">إنشاء حساب جديد</button>
+  </div>
+
+  <!-- Chat -->
+  <div id="chatPage" class="hidden">
+
+    <div class="topbar">
+      <h2 id="welcomeText"></h2>
+      <button class="logout" onclick="logout()">تسجيل الخروج</button>
+    </div>
+
+    <div class="chat-layout">
+
+      <div class="sidebar">
+        <input type="text" id="searchInput" placeholder="ابحث عن مستخدم" onkeyup="searchUsers()">
+        <div id="usersList"></div>
+      </div>
+
+      <div class="chat-box">
+        <h3 id="chatTitle">اختر مستخدم</h3>
+
+        <div class="messages" id="messages"></div>
+
+        <div class="send-box">
+          <input type="text" id="messageInput" placeholder="اكتب رسالة">
+          <button onclick="sendMessage()">إرسال</button>
+        </div>
+
+      </div>
+
+    </div>
+
+  </div>
+
 </div>
 
-<!-- MediaPipe -->
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+<script>
 
-<script src="script.js"></script>
+let currentUser = null;
+let selectedUser = null;
+
+function getUsers() {
+  return JSON.parse(localStorage.getItem("users") || "[]");
+}
+
+function saveUsers(users) {
+  localStorage.setItem("users", JSON.stringify(users));
+}
+
+function getMessages() {
+  return JSON.parse(localStorage.getItem("messages") || "[]");
+}
+
+function saveMessages(messages) {
+  localStorage.setItem("messages", JSON.stringify(messages));
+}
+
+function register() {
+  const username = document.getElementById("registerUsername").value.trim();
+  const password = document.getElementById("registerPassword").value.trim();
+
+  if (!username || !password) {
+    alert("املأ جميع الحقول");
+    return;
+  }
+
+  let users = getUsers();
+
+  if (users.find(u => u.username === username)) {
+    alert("اسم المستخدم موجود بالفعل");
+    return;
+  }
+
+  users.push({ username, password });
+  saveUsers(users);
+
+  alert("تم إنشاء الحساب");
+  showLogin();
+}
+
+function login() {
+  const username = document.getElementById("loginUsername").value.trim();
+  const password = document.getElementById("loginPassword").value.trim();
+
+  const users = getUsers();
+
+  const user = users.find(u => u.username === username && u.password === password);
+
+  if (!user) {
+    alert("بيانات غير صحيحة");
+    return;
+  }
+
+  currentUser = username;
+
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("chatPage").classList.remove("hidden");
+
+  document.getElementById("welcomeText").innerText = "مرحبا " + currentUser;
+
+  loadUsers();
+}
+
+function loadUsers() {
+  const usersList = document.getElementById("usersList");
+  usersList.innerHTML = "";
+
+  const users = getUsers();
+
+  users.forEach(user => {
+
+    if (user.username !== currentUser) {
+
+      const div = document.createElement("div");
+      div.className = "user-item";
+      div.innerText = user.username;
+
+      div.onclick = () => {
+        selectedUser = user.username;
+        document.getElementById("chatTitle").innerText = "الدردشة مع " + selectedUser;
+        loadMessages();
+      };
+
+      usersList.appendChild(div);
+    }
+  });
+}
+
+function searchUsers() {
+  const value = document.getElementById("searchInput").value.toLowerCase();
+
+  const items = document.querySelectorAll(".user-item");
+
+  items.forEach(item => {
+    if (item.innerText.toLowerCase().includes(value)) {
+      item.style.display = "block";
+    } else {
+      item.style.display = "none";
+    }
+  });
+}
+
+function sendMessage() {
+
+  if (!selectedUser) {
+    alert("اختر مستخدم");
+    return;
+  }
+
+  const input = document.getElementById("messageInput");
+  const text = input.value.trim();
+
+  if (!text) return;
+
+  let messages = getMessages();
+
+  messages.push({
+    from: currentUser,
+    to: selectedUser,
+    text: text,
+    time: Date.now()
+  });
+
+  saveMessages(messages);
+
+  input.value = "";
+
+  loadMessages();
+}
+
+function loadMessages() {
+
+  const box = document.getElementById("messages");
+  box.innerHTML = "";
+
+  const messages = getMessages();
+
+  const filtered = messages.filter(m => {
+    return (
+      (m.from === currentUser && m.to === selectedUser) ||
+      (m.from === selectedUser && m.to === currentUser)
+    );
+  });
+
+  filtered.forEach(msg => {
+
+    const div = document.createElement("div");
+
+    div.className = "message " + (msg.from === currentUser ? "me" : "other");
+
+    div.innerText = msg.text;
+
+    box.appendChild(div);
+  });
+
+  box.scrollTop = box.scrollHeight;
+}
+
+function logout() {
+  currentUser = null;
+  selectedUser = null;
+
+  document.getElementById("chatPage").classList.add("hidden");
+  document.getElementById("loginPage").classList.remove("hidden");
+}
+
+function showLogin() {
+  document.getElementById("registerPage").classList.add("hidden");
+  document.getElementById("loginPage").classList.remove("hidden");
+}
+
+function showRegister() {
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("registerPage").classList.remove("hidden");
+}
+
+</script>
 
 </body>
 </html>
+```
+
+# طريقة رفعه على GitHub Pages
+
+1. قم بإنشاء Repository جديد داخل urlGitHub[https://github.com](https://github.com)
+2. ارفع ملف `index.html`
+3. ادخل إلى:
+
+   * Settings
+   * Pages
+4. اختر:
+
+   * Branch: main
+5. اضغط Save
+6. سيتم إعطاؤك رابط الموقع.
+
+# مميزات الموقع
+
+* إنشاء حساب
+* تسجيل الدخول
+* البحث عن المستخدمين
+* الدردشة بين المستخدمين
+* حفظ الحسابات والرسائل داخل LocalStorage
+* تصميم جميل ومتجاوب مع الهاتف
+
+# ملاحظة مهمة
+
+هذا المشروع يعمل بدون سيرفر حقيقي، لذلك البيانات تُحفظ داخل المتصفح فقط.
+إذا أردت لاحقًا:
+
+* قاعدة بيانات حقيقية
+* رسائل مباشرة حقيقية Real-Time
+* صور شخصية
+* إشعارات
+* رفع صور وفيديوهات
+* تشفير كلمات المرور
+* Firebase أو Node.js
+
+يمكن تطويره لاحقًا بسهولة.
